@@ -1,11 +1,9 @@
-use quests_tracker::config::config_loader;
-use tracing::{error, info};
+use quests_tracker::{ config::config_loader, infrastructure::postgres::postgres_connection };
+use tracing::{ error, info };
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
+    tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).init();
 
     let config = match config_loader::load() {
         Ok(config) => config,
@@ -16,4 +14,14 @@ async fn main() {
     };
 
     info!("Config loaded: {:?}", config);
+
+    let postgres_pool = match postgres_connection::establish_connection(&config.database.url) {
+        Ok(pool) => pool,
+        Err(e) => {
+            error!("Failed to connect to database: {:#}", e);
+            std::process::exit(1);
+        }
+    };
+
+    info!("Connected to database");
 }
