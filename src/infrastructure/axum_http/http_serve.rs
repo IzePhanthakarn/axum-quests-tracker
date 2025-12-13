@@ -1,7 +1,7 @@
 use std::{ net::SocketAddr, sync::Arc, time::Duration };
 use crate::{
     config::config_model::AppConfig,
-    infrastructure::{ axum_http::default_router, postgres::postgres_connection::PgPoolSquad },
+    infrastructure::{ axum_http::{default_router, routers}, postgres::postgres_connection::PgPoolSquad },
 };
 use anyhow::Result;
 use axum::{ Router, http::Method, routing::get };
@@ -17,6 +17,13 @@ use tracing::info;
 pub async fn start(config: Arc<AppConfig>, db_pool: Arc<PgPoolSquad>) -> Result<()> {
     let app = Router::new()
         .fallback(default_router::not_found)
+        .nest("/journey-ledger", routers::journey_ledger::routes(Arc::clone(&db_pool)))
+        .nest("/quest-ops", routers::quest_ops::routes(Arc::clone(&db_pool)))
+        .nest("/crew-switchboard", routers::crew_switchboard::routes(Arc::clone(&db_pool)))
+        .nest("/guild-commanders", routers::guild_commanders::routes(Arc::clone(&db_pool)))
+        .nest("/adventurers", routers::adventurers::routes(Arc::clone(&db_pool)))
+        .nest("/quest-viewing", routers::quest_viewing::routes(Arc::clone(&db_pool)))
+        .nest("/authentication", routers::authentication::routes(Arc::clone(&db_pool)))
         .route("/health-check", get(default_router::health_check))
         .layer(TimeoutLayer::new(Duration::from_secs(config.server.timeout)))
 
