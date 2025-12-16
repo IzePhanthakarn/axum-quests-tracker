@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Json, Router, extract::State, response::IntoResponse, routing::post};
+use axum::{Json, Router, extract::State, http::StatusCode, response::IntoResponse, routing::post};
 
 use crate::{application::usecases::guild_commanders::GuildCommandersUseCase, domain::{repositories::guild_commanders::GuildCommanderRepository, value_objects::guild_commander_model::RegisterGuildCommanderModel}, infrastructure::postgres::{postgres_connection::PgPoolSquad, repositories::guild_commanders::GuildCommandersPostgres}};
 
@@ -20,5 +20,15 @@ pub async  fn register<T>(
 where 
     T: GuildCommanderRepository + Send + Sync
 {
-    unimplemented!()
+    match guild_commanders_use_case.register(register_adventurer_model).await {
+        Ok(guild_commander_id) =>
+            (
+                StatusCode::CREATED,
+                format!("Guild Commander registered with ID: {}", guild_commander_id),
+            ).into_response(),
+        Err(err) => {
+            eprintln!("Error registering adventurer: {:?}", err);
+            (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
+        }
+    }
 }

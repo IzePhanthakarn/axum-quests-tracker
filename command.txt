@@ -1,3 +1,11 @@
+// setup migration
 diesel setup
 
+// create migration folder
+diesel migration generate [action]
+
+// run migration
 diesel migration run
+
+// redo last migration
+diesel migration redo
