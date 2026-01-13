@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use chrono::{Duration, Utc};
 
 use crate::{
-    domain::repositories::{
+    config::config_loader, domain::repositories::{
         adventurers::AdventurersRepository,
         guild_commanders::GuildCommanderRepository,
-    },
-    infrastructure::jwt_authentication::{ authentication_model::LoginModel, jwt_model::Passport },
+    }, infrastructure::{argon2_hashing, jwt_authentication::{ authentication_model::LoginModel, generate_token, jwt_model::{Claims, Passport, Roles} }}
 };
 
 pub struct AuthenticationUseCase<T1, T2>
@@ -27,7 +27,39 @@ impl<T1, T2> AuthenticationUseCase<T1, T2>
     }
 
     pub async fn adventurers_login(&self, login_model: LoginModel) -> Result<Passport> {
-        unimplemented!()
+        let secret_env = config_loader::load()?.adventurers_secret;
+        
+        let adventurer = self.adventurers_repository.find_by_username(login_model.username.clone()).await?;
+
+        let original_password = adventurer.password;
+        let login_password = login_model.password;
+        println!("Original: {}, Login: {}", original_password, login_password);
+
+        if !argon2_hashing::verify(login_password, original_password)? {
+            return  Err(anyhow::anyhow!("Invalid password"));
+        };
+
+        let access_token_claims = Claims {
+            sub: adventurer.id.to_string(),
+            role: Roles::Adventurer,
+            exp: (Utc::now() + Duration::days(1)).timestamp() as usize,
+            iat: Utc::now().timestamp() as usize,
+        };
+
+        let refresh_token_claims = Claims {
+            sub: adventurer.id.to_string(),
+            role: Roles::Adventurer,
+            exp: (Utc::now() + Duration::days(7)).timestamp() as usize,
+            iat: Utc::now().timestamp() as usize,
+        };
+
+        let access_token = generate_token(secret_env.secret, &access_token_claims)?;
+        let refresh_token = generate_token(secret_env.refresh_secret, &refresh_token_claims)?;
+
+        Ok(Passport {
+            access_token,
+            refresh_token,
+        })
     }
 
     pub async fn adventurers_refresh_token(&self, refresh_token: String) -> Result<Passport>  {
@@ -35,7 +67,38 @@ impl<T1, T2> AuthenticationUseCase<T1, T2>
     }
 
     pub async fn guild_commanders_login(&self, login_model: LoginModel) -> Result<Passport> {
-        unimplemented!()
+        let secret_env = config_loader::load()?.guild_commanders_secret;
+        
+        let guild_commander = self.guild_commanders_repository.find_by_username(login_model.username.clone()).await?;
+
+        let original_password = guild_commander.password;
+        let login_password = login_model.password;
+
+        if !argon2_hashing::verify(login_password, original_password)? {
+            return  Err(anyhow::anyhow!("Invalid password"));
+        };
+
+        let access_token_claims = Claims {
+            sub: guild_commander.id.to_string(),
+            role: Roles::GuildCommander,
+            exp: (Utc::now() + Duration::days(1)).timestamp() as usize,
+            iat: Utc::now().timestamp() as usize,
+        };
+
+        let refresh_token_claims = Claims {
+            sub: guild_commander.id.to_string(),
+            role: Roles::GuildCommander,
+            exp: (Utc::now() + Duration::days(7)).timestamp() as usize,
+            iat: Utc::now().timestamp() as usize,
+        };
+
+        let access_token = generate_token(secret_env.secret, &access_token_claims)?;
+        let refresh_token = generate_token(secret_env.refresh_secret, &refresh_token_claims)?;
+
+        Ok(Passport {
+            access_token,
+            refresh_token,
+        })
     }
 
     pub async fn guild_commanders_refresh_token(&self, refresh_token: String) -> Result<Passport>  {
