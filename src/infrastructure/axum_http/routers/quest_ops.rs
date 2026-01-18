@@ -34,25 +34,29 @@ pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
 
 pub async fn add<T1, T2>(
     State(quest_ops_use_case): State<Arc<QuestOpsUseCase<T1, T2>>>,
-    Extension(guild_commander_id): Extension<i32>,
     Json(add_quest_model): Json<AddQuestModel>
 )
     -> impl IntoResponse
     where T1: QuestOpsRepository + Send + Sync, T2: QuestViewingRepository + Send + Sync
 {
-    unimplemented!()
+    match quest_ops_use_case.add(add_quest_model.guild_commander_id, add_quest_model).await {
+        Ok(quest_id) => (axum::http::StatusCode::CREATED, Json(quest_id)).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(err.to_string())).into_response(),
+    }
 }
 
 pub async fn edit<T1, T2>(
     State(quest_ops_use_case): State<Arc<QuestOpsUseCase<T1, T2>>>,
-    Extension(guild_commander_id): Extension<i32>,
     Path(quest_id): Path<i32>,
     Json(edit_quest_model): Json<EditQuestModel>
 )
     -> impl IntoResponse
     where T1: QuestOpsRepository + Send + Sync, T2: QuestViewingRepository + Send + Sync
 {
-    unimplemented!()
+    match quest_ops_use_case.edit(quest_id, edit_quest_model.guild_commander_id, edit_quest_model).await {
+        Ok(edited_quest_id) => (axum::http::StatusCode::OK, Json(edited_quest_id)).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(err.to_string())).into_response(),
+    }
 }
 
 pub async fn remove<T1, T2>(
@@ -63,5 +67,8 @@ pub async fn remove<T1, T2>(
     -> impl IntoResponse
     where T1: QuestOpsRepository + Send + Sync, T2: QuestViewingRepository + Send + Sync
 {
-    unimplemented!()
+    match quest_ops_use_case.remove(quest_id, guild_commander_id).await {
+        Ok(_) => (axum::http::StatusCode::NO_CONTENT).into_response(),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, Json(err.to_string())).into_response(),
+    }
 }

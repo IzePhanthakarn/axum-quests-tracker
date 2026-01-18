@@ -24,6 +24,7 @@ pub struct QuestModel {
 pub struct AddQuestModel {
     pub name: String,
     pub description: Option<String>,
+    pub guild_commander_id: i32,
 }
 
 impl AddQuestModel {
@@ -43,6 +44,7 @@ impl AddQuestModel {
 pub struct EditQuestModel {
     pub name: Option<String>,
     pub description: Option<String>,
+    pub guild_commander_id: i32,
 }
 
 impl EditQuestModel {
