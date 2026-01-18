@@ -7,7 +7,7 @@ use crate::{
     config::config_loader, domain::repositories::{
         adventurers::AdventurersRepository,
         guild_commanders::GuildCommanderRepository,
-    }, infrastructure::{argon2_hashing, jwt_authentication::{ authentication_model::LoginModel, generate_token, jwt_model::{Claims, Passport, Roles} }}
+    }, infrastructure::{argon2_hashing, jwt_authentication::{ self, authentication_model::LoginModel, generate_token, jwt_model::{Claims, Passport, Roles} }}
 };
 
 pub struct AuthenticationUseCase<T1, T2>
@@ -63,7 +63,31 @@ impl<T1, T2> AuthenticationUseCase<T1, T2>
     }
 
     pub async fn adventurers_refresh_token(&self, refresh_token: String) -> Result<Passport>  {
-        unimplemented!()
+        let secret_env = config_loader::load()?.adventurers_secret;
+
+        let claims = jwt_authentication::verify_token(secret_env.refresh_secret.clone(), refresh_token)?;
+
+        let access_token_claims = Claims {
+            sub: claims.sub.clone(),
+            role: Roles::Adventurer,
+            exp: (Utc::now() + Duration::days(1)).timestamp() as usize,
+            iat: Utc::now().timestamp() as usize,
+        };
+
+        let refresh_token_claims = Claims {
+            sub: claims.sub.clone(),
+            role: Roles::Adventurer,
+            exp: claims.exp,
+            iat: Utc::now().timestamp() as usize,
+        };
+
+        let access_token = generate_token(secret_env.secret, &access_token_claims)?;
+        let refresh_token = generate_token(secret_env.refresh_secret, &refresh_token_claims)?;
+
+        Ok(Passport {
+            access_token,
+            refresh_token,
+        })
     }
 
     pub async fn guild_commanders_login(&self, login_model: LoginModel) -> Result<Passport> {
@@ -102,6 +126,30 @@ impl<T1, T2> AuthenticationUseCase<T1, T2>
     }
 
     pub async fn guild_commanders_refresh_token(&self, refresh_token: String) -> Result<Passport>  {
-        unimplemented!()
+        let secret_env = config_loader::load()?.guild_commanders_secret;
+
+        let claims = jwt_authentication::verify_token(secret_env.refresh_secret.clone(), refresh_token)?;
+
+        let access_token_claims = Claims {
+            sub: claims.sub.clone(),
+            role: Roles::GuildCommander,
+            exp: (Utc::now() + Duration::days(1)).timestamp() as usize,
+            iat: Utc::now().timestamp() as usize,
+        };
+
+        let refresh_token_claims = Claims {
+            sub: claims.sub.clone(),
+            role: Roles::GuildCommander,
+            exp: claims.exp,
+            iat: Utc::now().timestamp() as usize,
+        };
+
+        let access_token = generate_token(secret_env.secret, &access_token_claims)?;
+        let refresh_token = generate_token(secret_env.refresh_secret, &refresh_token_claims)?;
+
+        Ok(Passport {
+            access_token,
+            refresh_token,
+        })
     }
 }

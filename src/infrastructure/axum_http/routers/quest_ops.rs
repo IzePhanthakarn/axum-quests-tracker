@@ -1,12 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    Extension,
-    Json,
-    Router,
-    extract::{ Path, State },
-    response::IntoResponse,
-    routing::{ delete, patch, post },
+    Extension, Json, Router, extract::{ Path, State }, middleware, response::IntoResponse, routing::{ delete, patch, post }
 };
 
 use crate::{
@@ -15,10 +10,10 @@ use crate::{
         repositories::{ quest_ops::QuestOpsRepository, quest_viewing::QuestViewingRepository },
         value_objects::quest_model::{ AddQuestModel, EditQuestModel },
     },
-    infrastructure::postgres::{
+    infrastructure::{axum_http::middlewares::guild_commanders_authorization, postgres::{
         postgres_connection::PgPoolSquad,
         repositories::{ quest_ops::QuestOpsPostgres, quest_viewing::QuestVieweingPostgres },
-    },
+    }},
 };
 
 pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
@@ -33,6 +28,7 @@ pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
         .route("/", post(add))
         .route("/:quest_id", patch(edit))
         .route("/:quest_id", delete(remove))
+        .route_layer(middleware::from_fn(guild_commanders_authorization))
         .with_state(Arc::new(quest_ops_use_case))
 }
 
