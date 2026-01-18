@@ -20,7 +20,7 @@ pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
 
     Router::new()
         .route("/:quest_id", get(view_details))
-        .route("/board-checking", get(board_checking))
+        .route("/board_checking", get(board_checking))
         .with_state(Arc::new(adventurers_use_case))
 }
 
@@ -30,7 +30,10 @@ pub async fn view_details<T>(
 ) -> impl IntoResponse
     where T: QuestViewingRepository + Send + Sync
 {
-    unimplemented!()
+    match quest_viewing_use_case.view_details(quest_id).await {
+        Ok(quest_model) => (axum::http::StatusCode::OK, serde_json::to_string(&quest_model).unwrap()),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+    }
 }
 
 pub async fn board_checking<T>(
@@ -39,5 +42,8 @@ pub async fn board_checking<T>(
 ) -> impl IntoResponse
     where T: QuestViewingRepository + Send + Sync
 {
-    unimplemented!()
+    match quest_viewing_use_case.board_checking(&filter).await {
+        Ok(quests_model) => (axum::http::StatusCode::OK, serde_json::to_string(&quests_model).unwrap()),
+        Err(err) => (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
+    }
 }

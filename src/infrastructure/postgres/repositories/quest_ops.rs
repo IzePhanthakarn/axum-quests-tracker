@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use axum::async_trait;
-use diesel::{ ExpressionMethods, RunQueryDsl, dsl::Returning, insert_into };
+use diesel::{ ExpressionMethods, RunQueryDsl, insert_into };
 
 use crate::{
     domain::{
