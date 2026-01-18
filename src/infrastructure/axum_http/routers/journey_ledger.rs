@@ -43,7 +43,10 @@ pub async fn in_journey<T1, T2>(
     -> impl IntoResponse
     where T1: JourneyLedgerRepository + Send + Sync, T2: QuestViewingRepository + Send + Sync
 {
-    unimplemented!()
+    match journey_ledger_use_case.in_journey(quest_id, guild_commander_id).await {
+        Ok(result) => (axum::http::StatusCode::OK, format!("Quest set to In Journey status. ID: {}", result)).into_response(),
+        Err(err) => (axum::http::StatusCode::BAD_REQUEST, format!("Error: {}", err)).into_response(),
+    }
 }
 
 pub async fn to_completed<T1, T2>(
@@ -54,7 +57,10 @@ pub async fn to_completed<T1, T2>(
     -> impl IntoResponse
     where T1: JourneyLedgerRepository + Send + Sync, T2: QuestViewingRepository + Send + Sync
 {
-    unimplemented!()
+    match journey_ledger_use_case.to_completed(quest_id, guild_commander_id).await {
+        Ok(result) => (axum::http::StatusCode::OK, format!("Quest set to Completed status. ID: {}", result)).into_response(),
+        Err(err) => (axum::http::StatusCode::BAD_REQUEST, format!("Error: {}", err)).into_response(),
+    }
 }
 
 pub async fn to_failed<T1, T2>(
@@ -65,5 +71,8 @@ pub async fn to_failed<T1, T2>(
     -> impl IntoResponse
     where T1: JourneyLedgerRepository + Send + Sync, T2: QuestViewingRepository + Send + Sync
 {
-    unimplemented!()
+    match journey_ledger_use_case.to_failed(quest_id, guild_commander_id).await {
+        Ok(result) => (axum::http::StatusCode::OK, format!("Quest set to Failed status. ID: {}", result)).into_response(),
+        Err(err) => (axum::http::StatusCode::BAD_REQUEST, format!("Error: {}", err)).into_response(),
+    }
 }

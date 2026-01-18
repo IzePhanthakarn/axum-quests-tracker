@@ -1,4 +1,4 @@
-use std::{ f32::consts::E, sync::Arc };
+use std::{ sync::Arc };
 
 use anyhow::{ Ok, Result };
 
@@ -7,7 +7,6 @@ use crate::{
         repositories::{ quest_ops::QuestOpsRepository, quest_viewing::QuestViewingRepository },
         value_objects::quest_model::{ AddQuestModel, EditQuestModel },
     },
-    infrastructure::postgres::schema::quests::guild_commander_id,
 };
 
 pub struct QuestOpsUseCase<T1, T2>

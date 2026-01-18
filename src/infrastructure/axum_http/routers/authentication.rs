@@ -5,11 +5,10 @@ use axum::{
 };
 use axum_extra::extract::cookie::{ Cookie, CookieJar };
 use cookie::time::Duration;
-use serde_json::json;
 
 use crate::{
     application::usecases::authentication::AuthenticationUseCase,
-    config::{ config_loader::{ self, get_stage }, stage::Stage },
+    config::{ config_loader::{ get_stage }, stage::Stage },
     domain::repositories::{
         adventurers::AdventurersRepository,
         guild_commanders::GuildCommanderRepository,
