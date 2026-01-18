@@ -5,13 +5,11 @@ use axum::{ Extension, Router, extract::{ Path, State }, middleware, response::I
 use crate::{
     application::usecases::crew_switchboard::CrewSwitchboardUseCase,
     domain::repositories::{
-        adventurers::AdventurersRepository,
-        crew_switchboard::CrewSwitchboardRepository,
+        crew_switchboard::CrewSwitchboardRepository, quest_viewing::QuestViewingRepository,
     },
     infrastructure::{axum_http::middlewares::adventurers_authorization, postgres::{
         postgres_connection::PgPoolSquad,
         repositories::{
-            adventurers::AdventurerPostgres,
             crew_switchboard::CrewSwitchboardPostgres,
             quest_viewing::QuestVieweingPostgres,
         },
@@ -20,10 +18,9 @@ use crate::{
 
 pub fn routes(db_pool: Arc<PgPoolSquad>) -> Router {
     let crew_swichboard_repository = CrewSwitchboardPostgres::new(Arc::clone(&db_pool));
-    let adventurer_repository = AdventurerPostgres::new(Arc::clone(&db_pool));
     let quest_viewing_repository = QuestVieweingPostgres::new(Arc::clone(&db_pool));
     let crew_swichboard_use_case = CrewSwitchboardUseCase::new(
-        Arc::new(adventurer_repository),
+        Arc::new(quest_viewing_repository),
         Arc::new(crew_swichboard_repository)
     );
     Router::new()
@@ -39,9 +36,12 @@ pub async fn join<T1, T2>(
     Path(quest_id): Path<i32>
 )
     -> impl IntoResponse
-    where T1: AdventurersRepository + Send + Sync, T2: CrewSwitchboardRepository + Send + Sync
+    where T1: QuestViewingRepository + Send + Sync, T2: CrewSwitchboardRepository + Send + Sync
 {
-    unimplemented!()
+    match crew_swichboard_use_case.join(quest_id, adventurer_id).await {
+        Ok(_) => (axum::http::StatusCode::OK, "Joined the quest successfully").into_response(),
+        Err(e) => (axum::http::StatusCode::BAD_REQUEST, format!("Failed to join the quest: {}", e)).into_response(),
+    }
 }
 
 pub async fn leave<T1, T2>(
@@ -50,7 +50,10 @@ pub async fn leave<T1, T2>(
     Path(quest_id): Path<i32>
 )
     -> impl IntoResponse
-    where T1: AdventurersRepository + Send + Sync, T2: CrewSwitchboardRepository + Send + Sync
+    where T1: QuestViewingRepository + Send + Sync, T2: CrewSwitchboardRepository + Send + Sync
 {
-    unimplemented!()
+    match crew_swichboard_use_case.leave(quest_id, adventurer_id).await {
+        Ok(_) => (axum::http::StatusCode::OK, "Left the quest successfully").into_response(),
+        Err(e) => (axum::http::StatusCode::BAD_REQUEST, format!("Failed to leave the quest: {}", e)).into_response(),
+    }
 }
